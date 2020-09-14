@@ -40,16 +40,21 @@ function proxl0simplex!( x::Vector{R}, a::R, b::R, y::Vector{R} ) where {R <: Re
     y .= y[prm]
     mv = Vector(0:n-1) # number of zeros
     lv = (b .- reverse(cumsum(reverse(y)))) ./ (n .- mv)
-    sv = cumsum([R(0); y[1:n-1]] .^ 2)
     feas = (y .+ lv .> R(0)) # feasibility
-    @assert any(feas)
-    mv = mv[feas]
-    lv = lv[feas]
-    sv = sv[feas]
-    cv = a .* (n .- mv) .+ 0.5 .* sv .+ 0.5 .* (n .- mv) .* (lv .^ 2) # cost
-    c, i = findmin(cv) # find minimum
-    m = mv[i]
-    l = lv[i]
+    if !any(feas)
+        m = n - 1
+        l = b - x[n]
+        #c = a + 0.5 * sum( x[1:m].^2 ) + 0.5 * (l ^ 2) # cost
+    else
+        sv = cumsum([R(0); y[1:n-1]] .^ 2)
+        mv = mv[feas]
+        lv = lv[feas]
+        sv = sv[feas]
+        cv = a .* (n .- mv) .+ 0.5 .* sv .+ 0.5 .* (n .- mv) .* (lv .^ 2) # cost
+        c, i = findmin(cv) # find minimum
+        m = mv[i]
+        l = lv[i]
+    end
     y[1:m] .= R(0)
     y[m+1:n] .+= l
     nnz_y = n - m

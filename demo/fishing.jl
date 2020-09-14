@@ -1,18 +1,19 @@
-push!(LOAD_PATH,"/home/alberto/Documents/optimo/src");
-push!(LOAD_PATH,"/home/alberto/Documents/bazinga/src");
-push!(LOAD_PATH,"/home/alberto/Documents/scsto/src/");
+push!(LOAD_PATH,"/home/alberto/Documents/OptiMo.jl/src");
+push!(LOAD_PATH,"/home/alberto/Documents/Bazinga.jl/src");
+push!(LOAD_PATH,"/home/alberto/Documents/ScSTO.jl/src/");
 
 using OptiMo, Bazinga
 using ScSTO
-using Printf, PyPlot, PyCall
+using Printf
+#using Plots
+using PyPlot, PyCall
 
 # time interval
 t0 = 0.0
 tf = 12.0
 
 # control sequence [nu x N]
-uvec = Matrix( [repeat([0.0; 1.0], 4, 1); 0.0]' )
-#uvec = Matrix( [repeat([0.0; 0.5; 1.0; 0.5], 8, 1); 0.0]' )
+uvec = Matrix( [repeat([0.0; 1.0], 5, 1); 0.0]' )
 nu = size(uvec, 1)
 N = size(uvec, 2)
 
@@ -25,6 +26,8 @@ x0 = [0.5; 0.7; 1; 1] # nx x 1
 nx = length(x0)
 
 # system dynamics
+# nx, nu  ->  nx
+# nx, nu  -> nx x nx
 function dynam( x::Vector{Float64}, u::Vector{Float64} )
     n = length(x)
     f = zeros(n)
@@ -33,10 +36,12 @@ function dynam( x::Vector{Float64}, u::Vector{Float64} )
     return f
 end
 function d_dynam( x::Vector{Float64}, u::Vector{Float64} )
-    df = [1.0-x[2]-0.4*u[1]       -x[1]                   0    0;
-          x[2]                     -1+x[1]-0.2*u[1]       0    0;
-          0                        0                      0    0;
-          0                        0                      0    0]
+    n = length(x)
+    df = zeros(n,n)
+    df[1,1] = 1.0 - x[2] - 0.4*u[1]
+    df[1,2] = -x[1]
+    df[2,1] = x[2]
+    df[2,2] = -1.0 + x[1] - 0.2*u[1]
     return df
 end
 
@@ -45,24 +50,25 @@ ngrid = 100
 
 # switching cost
 swc_grid = [0.0; 0.1; 1.0]
-#swc_grid = [0.0; 0.0001; 0.0005; 0.005]
+col_grid = [:steelblue, :orangered, :green]
 ng = length(swc_grid)
 
 # solver
 solver=Bazinga.ZEROFPR( tol_optim=1e-4,
-                        max_iter=100,
+                        max_iter=50,
                         verbose=true,
                         freq=10 )
 
 # allocation
 nt = 1000
-objective = Array{Float64}(undef, ng)
-cputime = Array{Float64}(undef, ng)
-swdelta = Array{Float64}(undef, N, ng)
-swtau = Array{Float64}(undef, N-1, ng)
-swtf = Array{Float64}(undef, ng)
-xsim = Array{Float64}(undef, nx, nt, ng)
-usim = Array{Float64}(undef, nu, nt, ng)
+objective = Array{Float64}(undef, ng, 2)
+cputime = Array{Float64}(undef, ng, 2)
+swdelta = Array{Float64}(undef, N, ng, 2)
+swtau = Array{Float64}(undef, N-1, ng, 2)
+swtf = Array{Float64}(undef, ng, 2)
+xsim = Array{Float64}(undef, nx, nt, ng, 2)
+usim = Array{Float64}(undef, nu, nt, ng, 2)
+repo_objf = Array{Any}(undef, ng, 2)
 
 for k in 1:ng
 
@@ -75,12 +81,14 @@ for k in 1:ng
     out = solver( prob )
     print( out )
 
-    cputime[k] = out.time
-    swdelta[:,k] .= out.x
-    swtau[:,k], swtf[k] = gettau(prob, swdelta[:,k])
+    cputime[k,1] = out.time
+    swdelta[:,k,1] .= out.x
+    swtau[:,k,1], swtf[k,1] = gettau(prob, swdelta[:,k,1])
 
-    xsim[:,:,k], _, objective[k], t = simulate(prob, swtau[:,k], length=nt)
-    usim[:,:,k], _ = simulateinput(prob, swtau[:,k], t)
+    xsim[:,:,k,1], _, objective[k,1], t = simulate(prob, swtau[:,k,1], length=nt)
+    usim[:,:,k,1], _ = simulateinput(prob, swtau[:,k,1], t)
+
+    repo_objf[k,1] = prob.repo.objf
 
 end
 
@@ -89,12 +97,78 @@ t = collect( range(t0, stop=tf, length=nt) )
 figure()
 subplot(3,1,1)
 for k in 1:ng
-    plot(t, xsim[1,:,k])
+    plot(t, xsim[1,:,k,1],c=col_grid[k])
+end
+ylim(0, 1.75)
+xlim(0, 12)
+yticks([0; 1; ])
+ylabel(L"x_1")
+subplot(3,1,2)
+for k in 1:ng
+    plot(t, xsim[2,:,k,1],c=col_grid[k])
+end
+ylabel(L"x_2")
+ylim(0, 1.75)
+xlim(0, 12)
+yticks([0; 1; ])
+subplot(3,1,3)
+for k in 1:ng
+    plot(t, usim[1,:,k,1],label="$(swc_grid[k])",c=col_grid[k])
+end
+legend()
+ylim(-0.2, 1.2)
+yticks([0; 1])
+xlim(0, 12)
+ylabel(L"u")
+xlabel(L"$\mathrm{Time}\; [s]$")
+gcf()
+
+savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_unc_traj.pdf")
+
+objfmin = minimum(repo_objf[1,1])
+for k in 2:ng
+    global objfmin = min(objfmin, minimum(repo_objf[k,1]) )
+end
+
+figure()
+for k in 1:ng
+    semilogy(repo_objf[k,1] .- objfmin)
+end
+gcf()
+savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_unc_objf.pdf")
+
+
+
+#figure()
+#for k in 1:ng
+#    semilogy(repo_objf[k,1] .- minimum(repo_objf[k,1]))
+#end
+#gcf()
+#savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_unc_objf_2.pdf")
+
+
+
+#swnnz = similar(swc_grid)
+#for k in 1:ng
+#    swnnz[k] = sum(swdelta[:,k,1] .> 0)
+#end
+#swobjective = swc_grid .* swnnz
+#swobjective .+= objective
+
+
+
+#=
+pgfplotsx()
+k = 1
+Plots.plot(t, [xsim[1,:,k], xsim[2,:,k], usim[1,:,k]],layout=(3,1))
+LegendEntry("σ = $(swc_grid[k])")
+for k in 2:ng
+    Plots.plot!(t, [xsim[1,:,k], xsim[2,:,k], usim[1,:,k]],layout=(3,1))
+    LegendEntry("σ = $(swc_grid[k])")
 end
 ylim(0, 1.75)
 yticks([0; 1; ])
 ylabel(L"x_1")
-
 subplot(3,1,2)
 for k in 1:ng
     plot(t, xsim[2,:,k])
@@ -102,7 +176,6 @@ end
 ylabel(L"x_2")
 ylim(0, 1.75)
 yticks([0; 1; ])
-
 subplot(3,1,3)
 for k in 1:ng
     plot(t, usim[1,:,k])
@@ -111,48 +184,127 @@ ylim(-0.2, 1.2)
 yticks([0; 1])
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
-
 gcf()
+=#
 
-swnnz = similar(swc_grid)
-for k in 1:ng
-    swnnz[k] = sum(swdelta[:,k] .> 0)
+
+################################################################################
+
+################################################################################
+# constraints
+# N-1  ->  ncon
+# N-1, ncon  ->  N-1
+# ncon  ->  ncon
+ncon = 2
+function constr( tau::Vector{Float64}, c::Vector{Float64} )
+    c[1] = tau[2]
+    c[2] = tau[4]
+    #c[3] = tau[6]
+    #c .= [tau[1]; tau[2] - tau[1]]#; tau[end]]
+    return nothing
 end
-swobjective = swc_grid .* swnnz
-swobjective .+= objective
+function d_constr( tau::Vector{Float64}, v::Vector{Float64}, jtv::Vector{Float64} )
+    jtv .= 0.0
+    #jtv[1] = v[1] - v[2]
+    #jtv[2] = v[2]
+    #jtv[end] = v[3]
+    jtv[2] = v[1]
+    jtv[4] = v[2]
+    #jtv[6] = v[3]
+    return nothing
+end
+function p_constr( c::Vector{Float64}, p::Vector{Float64} )
+    #p[1] = max(1.0, min(c[1], 2.0))
+    #p[2] = max(0.5, min(c[2], 1.0))
+    #p[3] = max(5.0, min(c[3], 6.0))
+    p[1] = max(1.0, min(c[1], 2.0))
+    p[2] = max(3.0, min(c[2], 4.0))
+    #p[3] = max(5.0, min(c[3], 6.0))
+    return nothing
+end
 
+solver2 = Bazinga.ALPX( tol_optim=1e-4,
+                        tol_cviol=1e-6,
+                        max_iter=5,
+                        max_sub_iter=20,
+                        verbose=true )
 
-#=
-swc2 = swc_grid[ng]
-prob2 = scstoproblem(x0, dynam, d_dynam, uvec, ngrid=ngrid, t0=t0, tf=tf, Q=Q, swc=swc2);
-out2 = solver( prob2 )
-tau2, _ = gettau(prob2, out2.x)
-xsim2, _, _, t2 = simulate(prob2, tau2, length=nt)
-usim2, _ = simulateinput(prob2, tau2, t2)
+for k in 1:ng
+
+    swc = swc_grid[k]
+
+    prob2 = scstoproblem(x0, dynam, d_dynam, uvec, ngrid=ngrid, t0=t0, tf=tf, Q=Q, swc=swc,
+                         ncon=ncon, constr=constr, dconstr=d_constr, pconstr=p_constr );
+
+    warmstart!(prob2, swtau[:,k,1])
+
+    out2 = solver2( prob2 )
+    print( out2 )
+
+    swdelta[:,k,2] = out2.x
+    swtau[:,k,2], _ = gettau(prob2, swdelta[:,k,2])
+    xsim[:,:,k,2], _, _, _ = simulate(prob2, swtau[:,k,2], t)
+    usim[:,:,k,2], _ = simulateinput(prob2, swtau[:,k,2], t)
+end
 
 figure()
 subplot(3,1,1)
-plot(t2, xsim2[1,:])
+k = 2 #for k in 1:ng
+plot(t, xsim[1,:,k,1], ls=:dashed)#,c=col_grid[k])
+plot(t, xsim[1,:,k,2])#,c=col_grid[k])
 ylim(0, 1.75)
+xlim(0, 12)
 yticks([0; 1; ])
 ylabel(L"x_1")
 subplot(3,1,2)
-plot(t2, xsim2[2,:])
+#for k in 1:ng
+plot(t, xsim[2,:,k,1], ls=:dashed)#,c=col_grid[k])
+plot(t, xsim[2,:,k,2])#,c=col_grid[k])
 ylabel(L"x_2")
 ylim(0, 1.75)
+xlim(0, 12)
 yticks([0; 1; ])
 subplot(3,1,3)
-plot(t2, usim2[1,:])
+#for k in 1:ng
+plot(t, usim[1,:,k,1], ls=:dashed, label="$(swc_grid[k]) unc")#,c=col_grid[k])
+plot(t, usim[1,:,k,2], label="$(swc_grid[k]) con")#,c=col_grid[k])
+legend(loc="upper right",ncol=2)
 ylim(-0.2, 1.2)
+xlim(0, 12)
 yticks([0; 1])
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
+gcf()
+savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_con_traj.pdf")
 
 figure()
-plot(prob2.repo.objf)
-ylabel(L"objective f")
-xlabel(L"call")
-=#
+subplot(3,1,1)
+k = 1
+plot(t, xsim[1,:,k,1], ls=:dashed)#,c=col_grid[k])
+plot(t, xsim[1,:,k,2])#,c=col_grid[k])
+ylim(0, 1.75)
+xlim(0, 12)
+yticks([0; 1; ])
+ylabel(L"x_1")
+subplot(3,1,2)
+#for k in 1:ng
+plot(t, xsim[2,:,k,1], ls=:dashed)#,c=col_grid[k])
+plot(t, xsim[2,:,k,2])#,c=col_grid[k])
+ylabel(L"x_2")
+ylim(0, 1.75)
+xlim(0, 12)
+yticks([0; 1; ])
+subplot(3,1,3)
+#for k in 1:ng
+plot(t, usim[1,:,k,1], ls=:dashed, label="$(swc_grid[k]) unc")#,c=col_grid[k])
+plot(t, usim[1,:,k,2], label="$(swc_grid[k]) con")#,c=col_grid[k])
+legend(loc="upper right",ncol=2)
+ylim(-0.2, 1.2)
+xlim(0, 12)
+yticks([0; 1])
+ylabel(L"u")
+xlabel(L"$\mathrm{Time}\; [s]$")
+gcf()
 
 
 
