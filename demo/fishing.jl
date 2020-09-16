@@ -1,13 +1,17 @@
-push!(LOAD_PATH,"/home/alberto/Documents/OptiMo.jl/src");
-push!(LOAD_PATH,"/home/alberto/Documents/Bazinga.jl/src");
-push!(LOAD_PATH,"/home/alberto/Documents/ScSTO.jl/src/");
+push!(LOAD_PATH,"/home/albertodm/Documents/OptiMo.jl/src");
+push!(LOAD_PATH,"/home/albertodm/Documents/Bazinga.jl/src");
+push!(LOAD_PATH,"/home/albertodm/Documents/ScSTO.jl/src/");
 
 using OptiMo, Bazinga
 using ScSTO
 using Printf
-#using Plots
 using PyPlot, PyCall
 
+################################################################################
+################################################################################
+# unconstrained STO
+################################################################################
+################################################################################
 # time interval
 t0 = 0.0
 tf = 12.0
@@ -123,7 +127,7 @@ ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 gcf()
 
-savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_unc_traj.pdf")
+#savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_unc_traj.pdf")
 
 objfmin = minimum(repo_objf[1,1])
 for k in 2:ng
@@ -135,18 +139,12 @@ for k in 1:ng
     semilogy(repo_objf[k,1] .- objfmin)
 end
 gcf()
-savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_unc_objf.pdf")
-
-
 
 #figure()
 #for k in 1:ng
 #    semilogy(repo_objf[k,1] .- minimum(repo_objf[k,1]))
 #end
 #gcf()
-#savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_unc_objf_2.pdf")
-
-
 
 #swnnz = similar(swc_grid)
 #for k in 1:ng
@@ -155,41 +153,10 @@ savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_unc_objf.pdf")
 #swobjective = swc_grid .* swnnz
 #swobjective .+= objective
 
-
-
-#=
-pgfplotsx()
-k = 1
-Plots.plot(t, [xsim[1,:,k], xsim[2,:,k], usim[1,:,k]],layout=(3,1))
-LegendEntry("σ = $(swc_grid[k])")
-for k in 2:ng
-    Plots.plot!(t, [xsim[1,:,k], xsim[2,:,k], usim[1,:,k]],layout=(3,1))
-    LegendEntry("σ = $(swc_grid[k])")
-end
-ylim(0, 1.75)
-yticks([0; 1; ])
-ylabel(L"x_1")
-subplot(3,1,2)
-for k in 1:ng
-    plot(t, xsim[2,:,k])
-end
-ylabel(L"x_2")
-ylim(0, 1.75)
-yticks([0; 1; ])
-subplot(3,1,3)
-for k in 1:ng
-    plot(t, usim[1,:,k])
-end
-ylim(-0.2, 1.2)
-yticks([0; 1])
-ylabel(L"u")
-xlabel(L"$\mathrm{Time}\; [s]$")
-gcf()
-=#
-
-
 ################################################################################
-
+################################################################################
+# constrained STO
+################################################################################
 ################################################################################
 # constraints
 # N-1  ->  ncon
@@ -199,34 +166,25 @@ ncon = 2
 function constr( tau::Vector{Float64}, c::Vector{Float64} )
     c[1] = tau[2]
     c[2] = tau[4]
-    #c[3] = tau[6]
-    #c .= [tau[1]; tau[2] - tau[1]]#; tau[end]]
     return nothing
 end
 function d_constr( tau::Vector{Float64}, v::Vector{Float64}, jtv::Vector{Float64} )
     jtv .= 0.0
-    #jtv[1] = v[1] - v[2]
-    #jtv[2] = v[2]
-    #jtv[end] = v[3]
     jtv[2] = v[1]
     jtv[4] = v[2]
-    #jtv[6] = v[3]
     return nothing
 end
 function p_constr( c::Vector{Float64}, p::Vector{Float64} )
-    #p[1] = max(1.0, min(c[1], 2.0))
-    #p[2] = max(0.5, min(c[2], 1.0))
-    #p[3] = max(5.0, min(c[3], 6.0))
     p[1] = max(1.0, min(c[1], 2.0))
     p[2] = max(3.0, min(c[2], 4.0))
-    #p[3] = max(5.0, min(c[3], 6.0))
     return nothing
 end
 
 solver2 = Bazinga.ALPX( tol_optim=1e-4,
                         tol_cviol=1e-6,
-                        max_iter=5,
-                        max_sub_iter=20,
+                        max_iter=10,
+                        max_sub_iter=10,
+                        subsolver=:zerofpr,
                         verbose=true )
 
 for k in 1:ng
@@ -249,25 +207,23 @@ end
 
 figure()
 subplot(3,1,1)
-k = 2 #for k in 1:ng
-plot(t, xsim[1,:,k,1], ls=:dashed)#,c=col_grid[k])
-plot(t, xsim[1,:,k,2])#,c=col_grid[k])
+k = 2
+plot(t, xsim[1,:,k,1], ls=:dashed)
+plot(t, xsim[1,:,k,2])
 ylim(0, 1.75)
 xlim(0, 12)
 yticks([0; 1; ])
 ylabel(L"x_1")
 subplot(3,1,2)
-#for k in 1:ng
-plot(t, xsim[2,:,k,1], ls=:dashed)#,c=col_grid[k])
-plot(t, xsim[2,:,k,2])#,c=col_grid[k])
+plot(t, xsim[2,:,k,1], ls=:dashed)
+plot(t, xsim[2,:,k,2])
 ylabel(L"x_2")
 ylim(0, 1.75)
 xlim(0, 12)
 yticks([0; 1; ])
 subplot(3,1,3)
-#for k in 1:ng
-plot(t, usim[1,:,k,1], ls=:dashed, label="$(swc_grid[k]) unc")#,c=col_grid[k])
-plot(t, usim[1,:,k,2], label="$(swc_grid[k]) con")#,c=col_grid[k])
+plot(t, usim[1,:,k,1], ls=:dashed, label="$(swc_grid[k]) unc")
+plot(t, usim[1,:,k,2], label="$(swc_grid[k]) con")
 legend(loc="upper right",ncol=2)
 ylim(-0.2, 1.2)
 xlim(0, 12)
@@ -275,37 +231,6 @@ yticks([0; 1])
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 gcf()
-savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_con_traj.pdf")
-
-figure()
-subplot(3,1,1)
-k = 1
-plot(t, xsim[1,:,k,1], ls=:dashed)#,c=col_grid[k])
-plot(t, xsim[1,:,k,2])#,c=col_grid[k])
-ylim(0, 1.75)
-xlim(0, 12)
-yticks([0; 1; ])
-ylabel(L"x_1")
-subplot(3,1,2)
-#for k in 1:ng
-plot(t, xsim[2,:,k,1], ls=:dashed)#,c=col_grid[k])
-plot(t, xsim[2,:,k,2])#,c=col_grid[k])
-ylabel(L"x_2")
-ylim(0, 1.75)
-xlim(0, 12)
-yticks([0; 1; ])
-subplot(3,1,3)
-#for k in 1:ng
-plot(t, usim[1,:,k,1], ls=:dashed, label="$(swc_grid[k]) unc")#,c=col_grid[k])
-plot(t, usim[1,:,k,2], label="$(swc_grid[k]) con")#,c=col_grid[k])
-legend(loc="upper right",ncol=2)
-ylim(-0.2, 1.2)
-xlim(0, 12)
-yticks([0; 1])
-ylabel(L"u")
-xlabel(L"$\mathrm{Time}\; [s]$")
-gcf()
-
-
+#savefig("/home/alberto/Documents/ScSTO.jl/demo/fishing_con_traj.pdf")
 
 return nothing
