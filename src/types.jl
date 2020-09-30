@@ -50,16 +50,16 @@ end
 mutable struct ScSTOrepo
 	# counters
 	ndyna::Int
-	nobjf::Int                                  # Number of objective function evaluations
-	ngrad::Int                                  # Number of gradient evaluations
-	nobjg::Int
-	nprox::Int
+	nobjf::Int                                  # number of smooth objective evaluations
+	ngrad::Int                                  # number of gradient evaluations
+	nobjg::Int 									# number of nonsmooth objective evaluations
+	nprox::Int 									# number of proximal evaluations
 	ncons::Int
 	ncjtv::Int
 	nproj::Int
 	# traces
-    objf::Vector{Float64}                      # Store Objective Value
-    delta::Matrix{Float64}                     # Store Iterates
+    objf::Vector{Float64}                      # store smooth objective
+    delta::Matrix{Float64}                     # store switching intervals
 end
 
 "ScSTO problem"
