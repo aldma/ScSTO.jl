@@ -1,4 +1,4 @@
-foldername = "/home/alberto/Documents/"
+foldername = "/home/albertodm/Documents/"
 push!(LOAD_PATH, foldername * "OptiMo.jl/src");
 push!(LOAD_PATH, foldername * "Bazinga.jl/src");
 push!(LOAD_PATH, foldername * "ScSTO.jl/src/");
@@ -124,7 +124,7 @@ xlim(0, 12)
 yticks([0; 1])
 subplot(3, 1, 3)
 for k = 1:ng
-    plot(t, usim[1, :, k, 1], label = "$(swc_grid[k])", c = col_grid[k])
+    plot(t, usim[1, :, k, 1], label = "σ = $(swc_grid[k])", c = col_grid[k])
 end
 legend()
 ylim(-0.2, 1.2)
@@ -133,7 +133,7 @@ xlim(0, 12)
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 gcf()
-savefig(foldername * "ScSTO.jl/demo/fishing_unc_traj.pdf")
+savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_traj.pdf")
 
 objfmin = minimum(repo_objf[1, 1])
 for k = 2:ng
@@ -145,7 +145,7 @@ for k = 1:ng
     semilogy(repo_objf[k, 1] .- objfmin)
 end
 gcf()
-savefig(foldername * "ScSTO.jl/demo/fishing_unc_objf.pdf")
+savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_objf.pdf")
 
 #figure()
 #for k in 1:ng
@@ -243,8 +243,8 @@ ylim(0, 1.75)
 xlim(0, 12)
 yticks([0; 1])
 subplot(3, 1, 3)
-plot(t, usim[1, :, k, 1], ls = :dashed, label = "$(swc_grid[k]) unc")
-plot(t, usim[1, :, k, 2], label = "$(swc_grid[k]) con")
+plot(t, usim[1, :, k, 1], ls = :dashed, label = "σ = $(swc_grid[k]) : unc")
+plot(t, usim[1, :, k, 2], label = "σ = $(swc_grid[k]) : con")
 legend(loc = "upper right", ncol = 2)
 ylim(-0.2, 1.2)
 xlim(0, 12)
@@ -252,4 +252,4 @@ yticks([0; 1])
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 gcf()
-savefig(foldername * "ScSTO.jl/demo/fishing_con_traj.pdf")
+savefig(foldername * "ScSTO.jl/demo/data/fishing_con_traj.pdf")
