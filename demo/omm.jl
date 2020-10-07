@@ -90,10 +90,8 @@ prob = scstoproblem(
 
 # solve
 solver = Bazinga.ZEROFPR(
-    tol_optim = 1e-6,
     max_iter = 100,
     verbose = true,
-    freq = 10,
     gamma_min = 1e-16,
 )
 out = solver(prob)
@@ -119,27 +117,30 @@ subplot(3, 1, 1)
 plot(tsim, xsim0[1, :], linestyle = "--")
 plot(tsim, xsim[1, :])
 ylim(0, 1.1)
+xlim(0, 1)
 yticks([0; 1])
-ylabel(L"x")
+ylabel(L"s")
 subplot(3, 1, 2)
 plot(tsim, xsim0[2, :], linestyle = "--")
 plot(tsim, xsim[2, :])
-ylabel(L"y")
+ylabel(L"p")
+xlim(0, 1)
 subplot(3, 1, 3)
 plot(tsim, usim0[1, :], linestyle = "--")
 plot(tsim, usim[1, :])
 ylim(-0.2, 2.2)
+xlim(0, 1)
 yticks([0; 1; 2])
 ylabel(L"u")
 xlabel(L"t")
 gcf()
-savefig(foldername * "ScSTO.jl/demo/omm_traj.pdf")
+savefig(foldername * "ScSTO.jl/demo/data/omm_traj.pdf")
 
 ################################################################################
 # with switching cost
 ################################################################################
 
-swc_grid = [20.0; 25.0; 30.0] # 20, 30, 40, 50
+swc_grid = [25.0; 30.0] # 20, 25, 30
 ng = length(swc_grid)
 
 objective_swc = Array{Float64}(undef, ng)
@@ -184,27 +185,30 @@ for k = 1:ng
     plot(tsim, xsim_swc[1, :, k])
 end
 ylim(0, 1.1)
+xlim(0, 1)
 yticks([0; 1])
-ylabel(L"x")
+ylabel(L"s")
 subplot(3, 1, 2)
 plot(tsim, xsim[2, :], linestyle = "--")
 for k = 1:ng
     plot(tsim, xsim_swc[2, :, k])
 end
-ylabel(L"y")
+ylabel(L"p")
+xlim(0, 1)
 subplot(3, 1, 3)
-plot(tsim, usim[1, :], linestyle = "--", label = "0.0")
+plot(tsim, usim[1, :], linestyle = "--", label = "σ = 0.0")
 for k = 1:ng
     plot(tsim, usim_swc[1, :, k], label = "σ = $(swc_grid[k])")
 end
 #legend(loc = "upper right")
 legend(loc = "upper center", bbox_to_anchor=(0.5, -0.2), ncol=5)
 ylim(-0.2, 2.2)
+xlim(0, 1)
 yticks([0; 1; 2])
 ylabel(L"u")
 xlabel(L"t")
 gcf()
-savefig(foldername * "ScSTO.jl/demo/omm_swc_traj.pdf")
+savefig(foldername * "ScSTO.jl/demo/data/omm_swc_traj.pdf")
 
 
 #figure()

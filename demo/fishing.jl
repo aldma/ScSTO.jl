@@ -1,4 +1,4 @@
-foldername = "/home/albertodm/Documents/"
+foldername = "/home/alberto/Documents/"
 push!(LOAD_PATH, foldername * "OptiMo.jl/src");
 push!(LOAD_PATH, foldername * "Bazinga.jl/src");
 push!(LOAD_PATH, foldername * "ScSTO.jl/src/");
@@ -59,7 +59,7 @@ col_grid = [:steelblue, :orangered, :green]
 ng = length(swc_grid)
 
 # solver
-solver = Bazinga.ZEROFPR(tol_optim = 1e-4, max_iter = 50, verbose = true, freq = 10)
+solver = Bazinga.ZEROFPR( max_iter = 50, verbose = true )
 
 # allocation
 nt = 1000
@@ -169,27 +169,28 @@ savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_objf.pdf")
 # N-1  ->  ncon
 # N-1, ncon  ->  N-1
 # ncon  ->  ncon
-ncon = 2
+ncon = 3
 function constr(tau::Vector{Float64}, c::Vector{Float64})
-    c[1] = tau[2]
-    c[2] = tau[4]
+    c[1] = tau[1]#2
+    c[2] = tau[3]#4
+    c[3] = tau[5]
     return nothing
 end
 function d_constr(tau::Vector{Float64}, v::Vector{Float64}, jtv::Vector{Float64})
     jtv .= 0.0
-    jtv[2] = v[1]
-    jtv[4] = v[2]
+    jtv[1] = v[1] #2
+    jtv[3] = v[2] #4
+    jtv[5] = v[3] #4
     return nothing
 end
 function p_constr(c::Vector{Float64}, p::Vector{Float64})
     p[1] = max(1.0, min(c[1], 2.0))
-    p[2] = max(3.0, min(c[2], 4.0))
+    p[2] = max(4.0, min(c[2], 5.0))
+    p[3] = max(7.0, min(c[3], 8.0))
     return nothing
 end
 
 solver2 = Bazinga.ALPX(
-    tol_optim = 1e-4,
-    tol_cviol = 1e-6,
     max_iter = 10,
     max_sub_iter = 10,
     subsolver = :zerofpr,
@@ -245,7 +246,7 @@ yticks([0; 1])
 subplot(3, 1, 3)
 plot(t, usim[1, :, k, 1], ls = :dashed, label = "σ = $(swc_grid[k]) : unc")
 plot(t, usim[1, :, k, 2], label = "σ = $(swc_grid[k]) : con")
-legend(loc = "upper right", ncol = 2)
+legend() # loc = "upper right", ncol = 2)
 ylim(-0.2, 1.2)
 xlim(0, 12)
 yticks([0; 1])
