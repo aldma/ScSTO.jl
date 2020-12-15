@@ -1,10 +1,4 @@
-foldername = "/home/alberto/Documents/"
-push!(LOAD_PATH, foldername * "OptiMo.jl/src");
-push!(LOAD_PATH, foldername * "Bazinga.jl/src");
-push!(LOAD_PATH, foldername * "ScSTO.jl/src/");
-
-using OptiMo, Bazinga
-using ScSTO
+using OptiMo, Bazinga, ScSTO
 using Printf
 using PyPlot, PyCall
 
@@ -126,7 +120,7 @@ xlim(0, 12)
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 gcf()
-savefig(foldername * "ScSTO.jl/test/data/fishing_ngrid.pdf")
+#savefig(foldername * "ScSTO.jl/test/data/fishing_ngrid.pdf")
 
 
 ################################################################################

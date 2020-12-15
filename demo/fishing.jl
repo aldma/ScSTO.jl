@@ -1,10 +1,4 @@
-foldername = "/home/alberto/Documents/"
-push!(LOAD_PATH, foldername * "OptiMo.jl/src");
-push!(LOAD_PATH, foldername * "Bazinga.jl/src");
-push!(LOAD_PATH, foldername * "ScSTO.jl/src/");
-
-using OptiMo, Bazinga
-using ScSTO
+using OptiMo, Bazinga, ScSTO
 using Printf
 using PyPlot, PyCall
 
@@ -133,7 +127,7 @@ xlim(0, 12)
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 gcf()
-savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_traj.pdf")
+#savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_traj.pdf")
 
 objfmin = minimum(repo_objf[1, 1])
 for k = 2:ng
@@ -145,7 +139,7 @@ for k = 1:ng
     semilogy(repo_objf[k, 1] .- objfmin)
 end
 gcf()
-savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_objf.pdf")
+#savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_objf.pdf")
 
 #figure()
 #for k in 1:ng
@@ -253,4 +247,4 @@ yticks([0; 1])
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 gcf()
-savefig(foldername * "ScSTO.jl/demo/data/fishing_con_traj.pdf")
+#savefig(foldername * "ScSTO.jl/demo/data/fishing_con_traj.pdf")

@@ -1,9 +1,4 @@
-push!(LOAD_PATH, "/home/alberto/Documents/OptiMo.jl/src");
-push!(LOAD_PATH, "/home/alberto/Documents/Bazinga.jl/src");
-push!(LOAD_PATH, "/home/alberto/Documents/ScSTO.jl/src/");
-
-using OptiMo, Bazinga
-using ScSTO
+using OptiMo, Bazinga, ScSTO
 using Printf, PyPlot, PyCall
 
 # time interval
@@ -50,21 +45,14 @@ end
 ncon = 0
 function constr(tau::Vector{Float64}, c::Vector{Float64})
     c[1] = tau[2]
-    #c .= [tau[1]; tau[2] - tau[1]]#; tau[end]]
     return nothing
 end
 function d_constr(tau::Vector{Float64}, v::Vector{Float64}, jtv::Vector{Float64})
     jtv .= 0.0
-    #jtv[1] = v[1] - v[2]
-    #jtv[2] = v[2]
-    #jtv[end] = v[3]
     jtv[2] = v[1]
     return nothing
 end
 function p_constr(c::Vector{Float64}, p::Vector{Float64})
-    #p[1] = max(1.0, min(c[1], 2.0))
-    #p[2] = max(0.5, min(c[2], 1.0))
-    #p[3] = max(5.0, min(c[3], 6.0))
     p[1] = min(c[1], 4.0)
     return nothing
 end

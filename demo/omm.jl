@@ -1,10 +1,4 @@
-foldername = "/home/alberto/Documents/"
-push!(LOAD_PATH, foldername * "OptiMo.jl/src");
-push!(LOAD_PATH, foldername * "Bazinga.jl/src");
-push!(LOAD_PATH, foldername * "ScSTO.jl/src/");
-
-using OptiMo, Bazinga
-using ScSTO
+using OptiMo, Bazinga, ScSTO
 using Printf, PyPlot, PyCall
 
 """
@@ -134,7 +128,7 @@ yticks([0; 1; 2])
 ylabel(L"u")
 xlabel(L"t")
 gcf()
-savefig(foldername * "ScSTO.jl/demo/data/omm_traj.pdf")
+#savefig(foldername * "ScSTO.jl/demo/data/omm_traj.pdf")
 
 ################################################################################
 # with switching cost
@@ -208,7 +202,7 @@ yticks([0; 1; 2])
 ylabel(L"u")
 xlabel(L"t")
 gcf()
-savefig(foldername * "ScSTO.jl/demo/data/omm_swc_traj.pdf")
+#savefig(foldername * "ScSTO.jl/demo/data/omm_swc_traj.pdf")
 
 
 #figure()

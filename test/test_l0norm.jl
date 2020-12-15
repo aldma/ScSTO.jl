@@ -1,7 +1,5 @@
 using Random
 
-include("/home/alberto/Documents/scsto/src/l0norm.jl")
-
 R = Float64
 ntests = 100
 nx = 100
