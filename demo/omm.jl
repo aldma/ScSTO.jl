@@ -1,5 +1,8 @@
 using OptiMo, Bazinga, ScSTO
 using Printf, PyPlot, PyCall
+using DelimitedFiles
+
+foldername = "/home/albertodm/Documents/ScSTO.jl/demo/"
 
 """
 Maintenance optimization problem
@@ -105,7 +108,18 @@ xsim, _, objective, _ = simulate(prob, swtau, tsim)
 usim, _ = simulateinput(prob, swtau, tsim)
 objf_0 = prob.repo.objf
 
-# plotting
+tmpmat = Array{Float64}(undef, nt, 1+2*3)
+tmpmat[:,1] = tsim
+tmpmat[:,2] = xsim0[1, :]
+tmpmat[:,3] = xsim0[2, :]
+tmpmat[:,4] = usim0[1, :]
+tmpmat[:,5] = xsim[1, :]
+tmpmat[:,6] = xsim[2, :]
+tmpmat[:,7] = usim[1, :]
+
+writedlm( foldername * "omm_init_traj.csv",  tmpmat, ',')
+
+#=
 figure()
 subplot(3, 1, 1)
 plot(tsim, xsim0[1, :], linestyle = "--")
@@ -128,7 +142,8 @@ yticks([0; 1; 2])
 ylabel(L"u")
 xlabel(L"t")
 gcf()
-#savefig(foldername * "ScSTO.jl/demo/data/omm_traj.pdf")
+savefig(foldername * "ScSTO.jl/demo/data/omm_traj.pdf")
+=#
 
 ################################################################################
 # with switching cost
@@ -172,6 +187,19 @@ for k = 1:ng
     objf_swc[k] = prob_swc.repo.objf
 end
 
+tmpmat = Array{Float64}(undef, nt, 1+3*(ng+1))
+tmpmat[:,1] = t
+tmpmat[:,2] = xsim[1, :]
+tmpmat[:,3] = xsim[2, :]
+tmpmat[:,4] = usim[1, :]
+for k = 1:ng
+    tmpmat[:,3*k+2] = xsim_swc[1, :, k]
+    tmpmat[:,3*k+3] = xsim_swc[2, :, k]
+    tmpmat[:,3*k+4] = usim_swc[1, :, k]
+end
+writedlm( foldername * "omm_swc_traj.csv",  tmpmat, ',')
+
+#=
 figure()
 subplot(3, 1, 1)
 plot(tsim, xsim[1, :], linestyle = "--")
@@ -202,13 +230,15 @@ yticks([0; 1; 2])
 ylabel(L"u")
 xlabel(L"t")
 gcf()
-#savefig(foldername * "ScSTO.jl/demo/data/omm_swc_traj.pdf")
+savefig(foldername * "ScSTO.jl/demo/data/omm_swc_traj.pdf")
+=#
 
-
-#figure()
-#semilogy(objf_0 .- minimum(objf_0))
-#for k in 1:ng
-#    semilogy(objf_swc[k] .- minimum(objf_swc[k]))
-#end
-#gcf()
-#savefig(foldername * "ScSTO.jl/demo/omm_objf.pdf")
+#=
+figure()
+semilogy(objf_0 .- minimum(objf_0))
+for k in 1:ng
+    semilogy(objf_swc[k] .- minimum(objf_swc[k]))
+end
+gcf()
+savefig(foldername * "ScSTO.jl/demo/omm_objf.pdf")
+=#

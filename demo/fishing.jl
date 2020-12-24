@@ -1,6 +1,9 @@
 using OptiMo, Bazinga, ScSTO
 using Printf
 using PyPlot, PyCall
+using DelimitedFiles
+
+foldername = "/home/albertodm/Documents/ScSTO.jl/demo/"
 
 ################################################################################
 ################################################################################
@@ -99,6 +102,16 @@ end
 
 t = collect(range(t0, stop = tf, length = nt))
 
+tmpmat = Array{Float64}(undef, nt, 1+3*ng)
+tmpmat[:,1] = t
+for k = 1:ng
+    tmpmat[:,3*k-1] = xsim[1, :, k, 1]
+    tmpmat[:,3*k]   = xsim[2, :, k, 1]
+    tmpmat[:,3*k+1] = usim[1, :, k, 1]
+end
+writedlm( foldername * "fishing_unc_traj.csv",  tmpmat, ',')
+
+#=
 figure()
 subplot(3, 1, 1)
 for k = 1:ng
@@ -127,7 +140,7 @@ xlim(0, 12)
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 gcf()
-#savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_traj.pdf")
+savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_traj.pdf")
 
 objfmin = minimum(repo_objf[1, 1])
 for k = 2:ng
@@ -139,20 +152,21 @@ for k = 1:ng
     semilogy(repo_objf[k, 1] .- objfmin)
 end
 gcf()
-#savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_objf.pdf")
+savefig(foldername * "ScSTO.jl/demo/data/fishing_unc_objf.pdf")
 
-#figure()
-#for k in 1:ng
-#    semilogy(repo_objf[k,1] .- minimum(repo_objf[k,1]))
-#end
-#gcf()
+figure()
+for k in 1:ng
+    semilogy(repo_objf[k,1] .- minimum(repo_objf[k,1]))
+end
+gcf()
 
-#swnnz = similar(swc_grid)
-#for k in 1:ng
-#    swnnz[k] = sum(swdelta[:,k,1] .> 0)
-#end
-#swobjective = swc_grid .* swnnz
-#swobjective .+= objective
+swnnz = similar(swc_grid)
+for k in 1:ng
+    swnnz[k] = sum(swdelta[:,k,1] .> 0)
+end
+swobjective = swc_grid .* swnnz
+swobjective .+= objective
+=#
 
 ################################################################################
 ################################################################################
@@ -165,16 +179,16 @@ gcf()
 # ncon  ->  ncon
 ncon = 3
 function constr(tau::Vector{Float64}, c::Vector{Float64})
-    c[1] = tau[1]#2
-    c[2] = tau[3]#4
+    c[1] = tau[1]
+    c[2] = tau[3]
     c[3] = tau[5]
     return nothing
 end
 function d_constr(tau::Vector{Float64}, v::Vector{Float64}, jtv::Vector{Float64})
     jtv .= 0.0
-    jtv[1] = v[1] #2
-    jtv[3] = v[2] #4
-    jtv[5] = v[3] #4
+    jtv[1] = v[1]
+    jtv[3] = v[2]
+    jtv[5] = v[3]
     return nothing
 end
 function p_constr(c::Vector{Float64}, p::Vector{Float64})
@@ -221,6 +235,19 @@ for k = 1:ng
     usim[:, :, k, 2], _ = simulateinput(prob2, swtau[:, k, 2], t)
 end
 
+
+tmpmat = Array{Float64}(undef, nt, 1+2*3)
+k = 2
+tmpmat[:,1] = t
+tmpmat[:,2] = xsim[1, :, k, 1]
+tmpmat[:,3] = xsim[2, :, k, 1]
+tmpmat[:,4] = usim[1, :, k, 1]
+tmpmat[:,5] = xsim[1, :, k, 2]
+tmpmat[:,6] = xsim[2, :, k, 2]
+tmpmat[:,7] = usim[1, :, k, 2]
+writedlm( foldername * "fishing_con_traj.csv",  tmpmat, ',')
+
+#=
 figure()
 subplot(3, 1, 1)
 k = 2
@@ -247,4 +274,5 @@ yticks([0; 1])
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 gcf()
-#savefig(foldername * "ScSTO.jl/demo/data/fishing_con_traj.pdf")
+savefig(foldername * "fishing_con_traj.pdf")
+=#
