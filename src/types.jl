@@ -62,9 +62,25 @@ mutable struct ScSTOrepo
     delta::Matrix{Float64}                     # store switching intervals
 end
 
+"Metadata for ScSTO problem"
+mutable struct ScSTOmeta
+	nvar::Int # number of variables
+	ncon::Int                                  # number of constraints
+	x0::AbstractVector
+	y0::AbstractVector
+	name::String
+end
+function ScSTOmeta(nvar::Int,
+	ncon::Int;
+	x0::AbstractVector=zeros(Float64,nvar),
+	y0::AbstractVector=zeros(Float64,ncon),
+	name::String="Generic")
+	return ScSTOmeta(nvar, ncon, x0, y0, name)
+end
+
 "ScSTO problem"
-mutable struct ScSTOptiModel <: AbstractOptiModel
-    meta::OptiModelMeta                         # metadata
+mutable struct ScSTOModel
+    meta::ScSTOmeta                         # metadata
     data::ScSTOdata 							# problem data
 	eval::ScSTOeval                             # evaluator
 	repo::ScSTOrepo								# reporter
@@ -75,9 +91,9 @@ end
 ################################################################################
 import Base.show
 
-show_header(io::IO, prob::ScSTOptiModel) = println(io, typeof(prob))
+show_header(io::IO, prob::ScSTOModel) = println(io, typeof(prob))
 
-function show(io::IO, prob::ScSTOptiModel)
+function show(io::IO, prob::ScSTOModel)
 	show_header(io, prob)
   	println(io, "Problem name: $(prob.meta.name)")
 end

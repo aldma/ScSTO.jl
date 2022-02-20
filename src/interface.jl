@@ -17,7 +17,7 @@ function scstoproblem(
     tf::Float64 = 1.0,                          # desired final time
     Q::Maybe{Matrix{Float64}} = nothing,        # state cost matrix [nx x nx]
     E::Maybe{Matrix{Float64}} = nothing,        # final state cost matrix [nx x nx]
-    swc::Maybe{Float64} = nothing,              # switching cost
+    swc::Float64 = 0.0,              # switching cost
     constr::Maybe{Function} = nothing,          # Constraints
     dconstr::Maybe{Function} = nothing,         # Constraints Derivative
     pconstr::Maybe{Function} = nothing,         # Constraints projection
@@ -136,7 +136,7 @@ function scstoproblem(
     # initial switching intervals
     delta0ws = tau2delta(tau0ws, t0, tf)
     # metadata
-    meta = OptiModelMeta(N, ncon, x0=delta0ws, minimize=true, name=name)
+    meta = ScSTOmeta(N, ncon, x0=delta0ws, name=name)
 
     # counters
     ndyna = 0
@@ -153,21 +153,20 @@ function scstoproblem(
     # reporter
     repo = ScSTOrepo(ndyna, nobjf,ngrad, nobjg, nprox, ncons, ncjtv, nproj, objf, delta)
 
-    return ScSTOptiModel(meta, data, eval, repo)
+    return ScSTOModel(meta, data, eval, repo)
 end
 
 """
     warmstart!( prob, tau )
 """
-function warmstart!(p::ScSTOptiModel, tau::Vector{Float64})
+function warmstart!(p::ScSTOModel, tau::Vector{Float64})
     @assert length(tau) == p.data.N - 1
     delta = getdelta(p, tau)
-    p.meta = OptiModelMeta(
+    p.meta = ScSTOmeta(
         p.data.N,
         p.meta.ncon,
         x0 = delta,
         y0 = p.meta.y0,
-        minimize = true,
         name = p.meta.name,
     )
     p.repo.objf = Vector{Float64}(undef, 0)
@@ -177,17 +176,17 @@ end
 """
     initialstate!( prob, x0 )
 """
-function initialstate!(p::ScSTOptiModel, x0::Vector{Float64})
+function initialstate!(p::ScSTOModel, x0::Vector{Float64})
     @assert length(x0) == p.data.nx - 1
     p.data.x0 = [x0; 1]
 end
 
 "getdelta(prob, tau)"
-function getdelta(p::ScSTOptiModel, tau::Vector{Float64})
+function getdelta(p::ScSTOModel, tau::Vector{Float64})
     return tau2delta(tau, p.data.t0, p.data.tf)
 end
 
 "gettau(prob, delta)"
-function gettau(p::ScSTOptiModel, delta::Vector{Float64})
+function gettau(p::ScSTOModel, delta::Vector{Float64})
     return delta2tau(delta, p.data.t0)
 end

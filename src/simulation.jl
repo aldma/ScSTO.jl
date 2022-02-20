@@ -15,12 +15,12 @@ function simulate(data::ScSTOdata, tau::Vector{Float64}, t::Vector{Float64})
 end
 
 "simulate(prob, tau, t)"
-function simulate(p::ScSTOptiModel, tau::Vector{Float64}, t::Vector{Float64})
+function simulate(p::ScSTOModel, tau::Vector{Float64}, t::Vector{Float64})
     return simulate(p.data, tau, t)
 end
 
 "simulate(prob, tau, [length])"
-function simulate(p::ScSTOptiModel, tau::Vector{Float64}; length::Int = 1000)
+function simulate(p::ScSTOModel, tau::Vector{Float64}; length::Int = 1000)
     @assert 1 < length
     t = collect(range(p.data.t0, stop = p.data.tf, length = length))
     return simulate(p, tau, t)
@@ -36,12 +36,12 @@ function simulateinput(data::ScSTOdata, tau::Vector{Float64}, t::Vector{Float64}
 end
 
 "simulateinput(prob, tau, t)"
-function simulateinput(p::ScSTOptiModel, tau::Vector{Float64}, t::Vector{Float64})
+function simulateinput(p::ScSTOModel, tau::Vector{Float64}, t::Vector{Float64})
     return simulateinput(p.data, tau, t)
 end
 
 "simulateinput(prob, tau, [length])"
-function simulateinput(p::ScSTOptiModel, tau::Vector{Float64}; length::Int = 1000)
+function simulateinput(p::ScSTOModel, tau::Vector{Float64}; length::Int = 1000)
     @assert 1 < length
     t = collect(range(p.data.t0, stop = p.data.tf, length = length))
     return simulateinput(p, tau, t)

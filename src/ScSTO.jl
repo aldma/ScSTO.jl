@@ -1,8 +1,6 @@
 module ScSTO
 
-using OptiMo
-
-export scstoproblem
+export scstoproblem, ScSTOModel
 
 include("types.jl")
 include("interface.jl")

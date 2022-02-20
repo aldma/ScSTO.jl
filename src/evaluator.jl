@@ -1,11 +1,11 @@
 using LinearAlgebra
 
 ################################################################################
-# Evaluation functions for (unconstrained) ScSTOptiModel
+# Evaluation functions for (unconstrained) ScSTOModel
 # obj, grad!, prox!, objprox!
 ################################################################################
 "Evaluate smooth objective"
-function OptiMo.obj(p::ScSTOptiModel, x::Vector{Float64})
+function obj(p::ScSTOModel, x::Vector{Float64})
     chkfinite(x)
     precompMatJ!(p, x)
     fx = (p.data.x0' * p.eval.S[:, :, 1] * p.data.x0)[1]
@@ -17,7 +17,7 @@ function OptiMo.obj(p::ScSTOptiModel, x::Vector{Float64})
 end
 
 "Evaluate gradient"
-function OptiMo.grad!(p::ScSTOptiModel, x::Vector{Float64}, dfx::Vector{Float64})
+function grad!(p::ScSTOModel, x::Vector{Float64}, dfx::Vector{Float64})
     chkfinite(x)
     precompMatGradJ!(p, x)
     for i = 1:p.data.N
@@ -29,7 +29,7 @@ function OptiMo.grad!(p::ScSTOptiModel, x::Vector{Float64}, dfx::Vector{Float64}
 end
 
 "Evaluate smooth objective and gradient"
-function OptiMo.objgrad!(p::ScSTOptiModel, x::Vector{Float64}, dfx::Vector{Float64})
+function objgrad!(p::ScSTOModel, x::Vector{Float64}, dfx::Vector{Float64})
     chkfinite(x)
     precompMatGradJ!(p, x)
     fx = (p.data.x0'*p.eval.S[:, :, 1]*p.data.x0)[1]
@@ -46,7 +46,7 @@ function OptiMo.objgrad!(p::ScSTOptiModel, x::Vector{Float64}, dfx::Vector{Float
 end
 
 "Constraints"
-function OptiMo.cons!(p::ScSTOptiModel, x::Vector{Float64}, cx::Vector{Float64})
+function cons!(p::ScSTOModel, x::Vector{Float64}, cx::Vector{Float64})
     chkfinite(x)
     tau, _ = gettau(p, x)
     p.data.constr(tau, cx)
@@ -56,7 +56,7 @@ function OptiMo.cons!(p::ScSTOptiModel, x::Vector{Float64}, cx::Vector{Float64})
 end
 
 "Transposed-Jacobian-vector multiplication"
-function OptiMo.jtprod!(p::ScSTOptiModel, x::Vector{Float64}, v::Vector{Float64}, jtv::Vector{Float64})
+function jtprod!(p::ScSTOModel, x::Vector{Float64}, v::Vector{Float64}, jtv::Vector{Float64})
     chkfinite(x)
     chkfinite(v)
     tau, _ = gettau(p, x)
@@ -74,7 +74,7 @@ function OptiMo.jtprod!(p::ScSTOptiModel, x::Vector{Float64}, v::Vector{Float64}
 end
 
 "Project constraints"
-function OptiMo.proj!(p::ScSTOptiModel, cx::Vector{Float64}, px::Vector{Float64})
+function proj!(p::ScSTOModel, cx::Vector{Float64}, px::Vector{Float64})
     chkfinite(cx)
     p.data.pconstr(cx, px)
     p.repo.nproj += 1
@@ -83,7 +83,7 @@ function OptiMo.proj!(p::ScSTOptiModel, cx::Vector{Float64}, px::Vector{Float64}
 end
 
 "Prox operator"
-function OptiMo.prox!(p::ScSTOptiModel, x::Vector{Float64}, a::Float64, z::Vector{Float64})
+function prox!(p::ScSTOModel, x::Vector{Float64}, a::Float64, z::Vector{Float64})
     chkfinite(x)
     chkfinite(a)
     proxl0simplex!(x, a * p.data.swc, p.data.dt, z)
@@ -93,7 +93,7 @@ function OptiMo.prox!(p::ScSTOptiModel, x::Vector{Float64}, a::Float64, z::Vecto
 end
 
 "Prox operator and objective"
-function OptiMo.objprox!(p::ScSTOptiModel, x::Vector{Float64}, a::Float64, z::Vector{Float64})
+function objprox!(p::ScSTOModel, x::Vector{Float64}, a::Float64, z::Vector{Float64})
     chkfinite(x)
     chkfinite(a)
     gz = proxl0simplex!(x, a * p.data.swc, p.data.dt, z)
@@ -109,7 +109,7 @@ end
 # Functions to precompute matrices
 ################################################################################
 "Precompute matrices for cost function"
-function precompMatJ!(p::ScSTOptiModel, x::Vector{Float64})
+function precompMatJ!(p::ScSTOModel, x::Vector{Float64})
     chkfinite(x)
     if p.eval.delta_old_S != x
         copyto!(p.eval.delta_old_S, x)
@@ -120,7 +120,7 @@ function precompMatJ!(p::ScSTOptiModel, x::Vector{Float64})
 end
 
 "Precompute matrices for gradient"
-function precompMatGradJ!(p::ScSTOptiModel, x::Vector{Float64})
+function precompMatGradJ!(p::ScSTOModel, x::Vector{Float64})
     chkfinite(x)
     if p.eval.delta_old_C != x
         copyto!(p.eval.delta_old_C, x)
@@ -131,7 +131,7 @@ function precompMatGradJ!(p::ScSTOptiModel, x::Vector{Float64})
 end
 
 "Propagate dynamics"
-function propagateDynamics!(p::ScSTOptiModel, x::Vector{Float64})
+function propagateDynamics!(p::ScSTOModel, x::Vector{Float64})
     chkfinite(x)
     p.repo.ndyna += 1
     # Get positive delta
