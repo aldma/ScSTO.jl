@@ -1,6 +1,9 @@
-using OptiMo, Bazinga, ScSTO
+using ScSTO
+using Bazinga
 using Printf
-using PyPlot, PyCall
+#using PyPlot, PyCall
+
+include("../demo/interface_scsto_bazinga.jl")
 
 ################################################################################
 ################################################################################
@@ -51,15 +54,39 @@ swc = 0.1
 ngrid_grid = [100; 200; 1000]
 ng = length(ngrid_grid)
 
-# solver
-solver = Bazinga.ZEROFPR( max_iter = 50, verbose = true )
-
 # allocation
 nt = 2000;
 swdelta = Array{Float64}(undef, N, ng);
 swtau = Array{Float64}(undef, N - 1, ng);
 xsim = Array{Float64}(undef, nx, nt, ng);
 usim = Array{Float64}(undef, nu, nt, ng);
+
+# solver
+using ProximalAlgorithms
+T = Float64
+subsolver_directions = ProximalAlgorithms.LBFGS(5)
+subsolver_maxit = 1_000
+subsolver_minimum_gamma = eps(T)
+subsolver(; kwargs...) = ProximalAlgorithms.PANOCplus(
+    directions = subsolver_directions,
+    maxit = subsolver_maxit,
+    freq = subsolver_maxit,
+    minimum_gamma = subsolver_minimum_gamma;
+    kwargs...,
+)
+solver(f, g, c, D, x0, y0; kwargs...) = Bazinga.alps(
+    f,
+    g,
+    c,
+    D,
+    x0,
+    y0,
+    verbose = true,
+    subsolver = subsolver,
+    subsolver_maxit = subsolver_maxit;
+    kwargs...,
+)
+
 
 for k = 1:ng
 
@@ -77,10 +104,19 @@ for k = 1:ng
         swc = swc,
     )
 
-    out = solver(prob)
-    print(out)
+    f = ScSTOSmoothCost(prob)
+    g = ScSTONonsmoothCost(prob)
+    c = ScSTOConstraint(prob)
+    D = ScSTOSet(prob)
+    nx = prob.meta.nvar
+    #ny = nx
+    ny = 1
+    x0 = prob.meta.x0
+    y0 = zeros(T,ny)
 
-    swdelta[:, k] .= out.x
+    out = solver(f, g, c, D, x0, y0)
+
+    swdelta[:, k] .= out[1]
     swtau[:, k], _ = gettau(prob, swdelta[:, k])
 
     xsim[:, :, k], _, _, t = simulate(prob, swtau[:, k], length = nt)
